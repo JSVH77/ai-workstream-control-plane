@@ -1,0 +1,30 @@
+# EXAMPLE project overlay — copy to `project.yaml` and edit. This is the ONE file that names your project;
+# the framework core (scripts/, hooks/) is project-agnostic and reads its identity from here.
+
+project_name: MyProject                 # your project's name (auto-forbidden in the framework core by decoupling-lint)
+
+# Installed hooks + `wf` live under ~/.claude/hooks/<hook_namespace>/ (sync-hooks) and in the generated
+# settings.json hook paths (gen-config templates {{HOOK_NAMESPACE}}). Use a short, unique slug.
+hook_namespace: myproject
+
+# Top-level dirs to protect from `rm -rf` in generated settings.json (gen-config appends a deny per entry,
+# on top of the generic safety floor in settings-base.json).
+protected_paths:
+  - src
+
+# Verbatim extra deny entries appended to generated settings.json (stack-specific safety). Leave empty or add.
+extra_denies: []
+
+# Host-project nouns to keep OUT of the framework core — decoupling-lint's forbidden set (project_name is
+# auto-added). Start EMPTY and add YOUR paths / stack / domain terms as you learn them. Do NOT ship generic
+# words the framework's own examples use (e.g. `src`, which appears in loop.py's sample scope) — they'd make
+# the core gate false-positive in a fresh repo. Empty = name-only gate (a fine starting point).
+decoupling_nouns: []
+#   - '\b(postgres|redis|stripe)\b'      # e.g. your stack
+#   - 'YourDomainTermA|YourDomainTermB'  # e.g. your methodology/domain nouns
+
+# OPTIONAL memory-hygiene routing hints — stream_id -> regex matched against orphan memory filenames.
+# Absent = mem-hygiene skips affinity routing. Project-local heuristic, not core.
+# memory_affinity:
+#   S1: "frontend|_fe_|ui"
+#   S2: "backend|api|_be_"

@@ -1,0 +1,37 @@
+# EXAMPLE ownership map — copy to `ownership.yaml` at the framework root and edit (control-plane spec §3.2).
+#
+# Path-glob → owning stream, plus the arbitration path for overlap. This is the **edit-authority** map;
+# its dual is the per-stream charter (**apply-authority**, `charters/<stream>.md`, pointed to by `governs:`
+# in the registry).
+#
+# STATUS: authoritative DATA, NOT yet mechanically enforced — the CI/label check that would flag a PR
+# touching paths outside the author-stream's ownership is DESIGN (spec §3.2, §10). Until then this is a
+# convention streams follow. We deliberately prefer ownership + proposal-PR + (future) CI enforcement over
+# hard cross-session file LOCKING, which is heavy and fragile at this scale.
+#
+# Rule of thumb: every glob a stream may EDIT should appear in exactly one owner entry. Anything genuinely
+# co-owned goes to `shared` and requires a proposal PR — "shared" is a decision, not a default.
+
+owners:
+  # --- one entry per stream lane; mirror the `lane` globs in streams.yaml ---
+  "src/frontend/**": S1
+  "src/api/**": S2
+
+  # --- the control plane itself is always the orchestrator's ---
+  "scripts/**": SA
+  "hooks/**": SA
+  "config/**": SA
+  "charters/**": SA
+
+  # --- co-owned / router-assigned paths (no single owner) ---
+  "docs/**": shared
+
+# Overlap arbitration — what happens when a stream needs a path it does not own.
+escalation:
+  single_owner: "other streams PROPOSE via PR; the owner reviews + merges"
+  shared: "proposal PR required; the operator/SA routes"
+  registry: "config/** and this file: SA only"
+  conflict: "if two streams need the same non-owned path, escalate to SA (control plane), not a lock"
+
+# Merge authority mirrors `can_merge` in streams.yaml: SA only, post-review. Every non-SA worktree denies
+# `gh pr merge` AND the GitHub-MCP merge tool — gen-config enforces both surfaces.

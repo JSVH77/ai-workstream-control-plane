@@ -1,0 +1,21 @@
+# --- runtime (control-plane spec §1.2: tracked framework vs gitignored exhaust) ---
+.workflow-runtime/
+__pycache__/
+*.pyc
+
+# --- per-worktree operator state (Tier C) — never committed ---
+STATE.md
+STATE.journal.md
+.claude/settings.json
+.claude/settings.local.json
+.claude/transcript-backups/
+
+# --- the HOST OVERLAY (see README "Why the overlay is not tracked here") ---
+# This repo ships the framework CORE + *.example.yaml templates. The concrete overlay is per-adopter:
+# `init.sh` generates it from the examples. Keeping it untracked here means a consumer that vendors this
+# repo via `git subtree` never has its own overlay clobbered by an upstream pull. In a HOST project these
+# same files ARE tracked (Tier A) — that is the correct place for them.
+config/project.yaml
+config/streams.yaml
+ownership.yaml
+review-ledger.md

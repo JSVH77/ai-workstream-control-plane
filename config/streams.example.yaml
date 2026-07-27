@@ -1,0 +1,37 @@
+# EXAMPLE stream registry — copy to `streams.yaml` and edit for your project (control-plane-spec §3.1).
+# The registry is the single source of truth: gen-config generates per-worktree settings from it, and doctor
+# reports topology against it. `governs:` points at each stream's charter; `can_merge` is SA-only (post-review).
+#
+# Streams are separated by FILE SCOPE (lane), not by base branch — several may share a base. Keep the
+# orchestrator (SA) on the main root; give each other stream its own worktree dir.
+
+streams:
+  SA:                                   # orchestrator — owns the control plane, merges PRs post-review
+    worktree: myproject                 # main-root worktree directory name (<dev_root>/myproject)
+    role: orchestrator
+    lane: ["workflow/**"]
+    governs: workflow/charters/SA.md
+    base: main
+    model: claude-opus-4-8[1m]          # the stream-session dev-agent model (a /model concern, not prod)
+    can_merge: true
+    pinned: false
+
+  S1:                                   # example feature stream (rename/duplicate per your lanes)
+    worktree: myproject-fe
+    role: frontend
+    lane: ["src/frontend/**"]
+    governs: workflow/charters/S1.md
+    base: main
+    model: claude-opus-4-8[1m]
+    can_merge: false
+    pinned: false
+
+  S2:                                   # a second stream on a shared integration base (optional)
+    worktree: myproject-api
+    role: backend
+    lane: ["src/api/**"]
+    governs: workflow/charters/S2.md
+    base: integration                   # streams may fork off a non-main base; pre-push resolves it per stream
+    model: claude-opus-4-8[1m]
+    can_merge: false
+    pinned: false

@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# wf — branch-independent launcher for the control-plane tools (control-plane spec §3.3).
+#
+# WHY: the tools only exist on branches that carry the framework. A stream on a feature branch that
+# pre-dates it (or any branch without it) otherwise can't run dispatch/doctor/gen-config. This launcher
+# resolves the MAIN worktree (which carries the framework on `main`) via git-common-dir, so ANY stream can
+# run the tools from ANY branch — the same branch-independence the hooks already have.
+#
+# INSTALL: sync-hooks.sh copies this to ~/.claude/hooks/<hook_namespace>/wf (add that dir to PATH, or call
+# by full path). RESOLUTION: run from inside any worktree; the shared .git -> its parent is the main root;
+# the framework is located UNDER that root in either supported layout (see below) and the tools
+# self-resolve their config/queue from there.
+#
+# LAYOUT-AGNOSTIC: the framework may be the repo itself (<root>/scripts/) or vendored under a prefix via
+# `git subtree --prefix=X` (<root>/X/scripts/). We probe for the marker `scripts/doctor.py` at the root
+# first, then one level down — so any prefix works, not just `workflow/`. `CP_FRAMEWORK_DIR` overrides.
+#
+# Usage:  wf dispatch <send|inbox|watch|ack|log|show> [args]   |   wf doctor [--json|--compliance]
+#         wf gen-config [--dry-run] [--worktree X]        |   wf loop <start|tick|status|release>
+#         wf pre-push [--base <ref>]  |  wf decoupling-lint [--zone …]  |  wf smoke  |  wf sync-hooks  |  wf help
+set -euo pipefail
+
+common="$(git rev-parse --git-common-dir 2>/dev/null || true)"
+[ -z "$common" ] && { echo "wf: not inside a git worktree" >&2; exit 1; }
+case "$common" in /*) : ;; *) common="$(cd "$common" && pwd)" ;; esac
+mainroot="$(cd "$common/.." && pwd)"
+
+# Locate the framework dir under the main root (marker = scripts/doctor.py).
+framework=""
+if [ -n "${CP_FRAMEWORK_DIR:-}" ] && [ -f "$CP_FRAMEWORK_DIR/scripts/doctor.py" ]; then
+  framework="$CP_FRAMEWORK_DIR"
+elif [ -f "$mainroot/scripts/doctor.py" ]; then
+  framework="$mainroot"
+else
+  for cand in "$mainroot"/*/; do
+    if [ -f "${cand}scripts/doctor.py" ]; then framework="${cand%/}"; break; fi
+  done
+fi
+if [ -z "$framework" ]; then
+  echo "wf: control-plane framework not found under $mainroot — is the main worktree on a branch that has it?" >&2
+  echo "    (looked for scripts/doctor.py at the root and one level down; set CP_FRAMEWORK_DIR to override)" >&2
+  exit 1
+fi
+scripts="$framework/scripts"
+
+# Don't let RUNNING the tools dirty the substrate: the .py tools import a shared sibling module, so Python
+# would write `scripts/__pycache__/` into the framework dir on every invocation. In a repo that hasn't
+# gitignored bytecode that turns the guard below into a self-trip — the first run makes the second refuse.
+export PYTHONDONTWRITEBYTECODE=1
+
+# FAIL CLOSED on a dirty substrate: the tools come from the main worktree's working copy, so an
+# uncommitted/WIP edit there would otherwise become globally live for every stream before it is
+# committed or reviewed. Refuse to run un-committed tools. (spec §1.2 — the substrate must be a
+# committed revision, not a live edit.)
+# Compiled bytecode is EXCLUDED: it is a build artifact of running the tools, not an edit to them, so
+# treating it as "WIP tooling" would fail closed on the wrong signal (and mask the edits that matter).
+relfw="${framework#"$mainroot"/}"; [ "$relfw" = "$framework" ] && relfw="."
+dirty="$(git -C "$mainroot" status --porcelain -- \
+           "$relfw/scripts" "$relfw/config" "$relfw/hooks" 2>/dev/null \
+         | grep -v '__pycache__' || true)"
+if [ -n "$dirty" ]; then
+  echo "wf: REFUSING — the main worktree ($mainroot) has UNCOMMITTED changes under the framework:" >&2
+  echo "$dirty" | sed 's/^/    /' >&2
+  echo "    Commit them (or run the tools from a clean checkout) so streams don't run WIP tooling." >&2
+  exit 1
+fi
+# Soft warning if the shared substrate isn't on the blessed ref (main). Committed but off-main is still
+# reviewable-in-a-PR; uncommitted (above) is the real hazard, so this only warns.
+mref="$(git -C "$mainroot" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+[ "$mref" = "main" ] || echo "wf: note — main worktree is on '$mref', not 'main'; tools resolve from that ref." >&2
+
+tool="${1:-help}"; shift 2>/dev/null || true
+case "$tool" in
+  dispatch|doctor|gen-config|mem-hygiene|loop) exec python3 "$scripts/$tool.py" "$@" ;;
+  pre-push)                   exec python3 "$scripts/pre-push-check.py" "$@" ;;
+  decoupling-lint)            exec python3 "$scripts/decoupling-lint.py" "$@" ;;
+  smoke)                      exec bash   "$scripts/smoke-fresh-repo.sh" "$@" ;;
+  sync-hooks)                 exec bash   "$scripts/sync-hooks.sh" "$@" ;;
+  help|-h|--help)
+    echo "wf <dispatch|doctor|gen-config|mem-hygiene|loop|pre-push|decoupling-lint|smoke|sync-hooks> [args]"
+    echo "  (resolves the main worktree's framework scripts/ — works from any branch, any layout)"
+    ;;
+  *) echo "wf: unknown tool '$tool' (try: dispatch, doctor, gen-config, mem-hygiene, loop, pre-push, sync-hooks)" >&2; exit 1 ;;
+esac

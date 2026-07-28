@@ -22,8 +22,9 @@ host's registry, ledger, ownership map, or **merge gates**. That is why core shi
 | 3 | **Host SA** | Branch: `git checkout -b chore/vendor-control-plane`. |
 | 4 | **Host SA** | `git subtree add` **refuses a prefix that already exists**, so remove the old copy first: `git rm -r <prefix> && git commit`. This is why step 2 is not optional. |
 | 5 | **Host SA** | `git subtree add --prefix=<prefix> <framework-remote> <ref> --squash`. Use `--squash` unless you genuinely want the framework's full history interleaved into the host log; `--squash` keeps the host history readable and still supports later pulls. |
-| 6 | **Host SA** | **Restore the overlay** from step 2 into the prefix and commit. The host's charters, registry, ownership map, and ledger are tracked **in the host** (Tier A) — that is where they belong. |
-| 7 | **Host SA** | Run `<prefix>/init.sh` if any overlay file is missing — it renders what's absent from the templates and is non-destructive to what exists (`[keep]` for every file already present). |
+| 6 | **Host SA** | **Restore the overlay** from step 2 into the prefix. |
+| 6b | **Host SA** | **`git add -f` every overlay file — this step is mandatory and non-obvious.** The core's own `.gitignore` travels with it into `<prefix>/`, and git resolves ignore rules with the **deepest** file winning, so `<prefix>/.gitignore` ignores the host's *own* charters and config. A negation in the host's root `.gitignore` does **not** rescue them. Without `-f` the overlay is silently absent from every fresh clone: <br>`git add -f <prefix>/charters/*.md <prefix>/config/project.yaml <prefix>/config/streams.yaml <prefix>/ownership.yaml <prefix>/review-ledger.md` <br>Once tracked, ignore rules no longer apply to those paths — later edits and pulls behave normally. Then commit. |
+| 7 | **Host SA** | Run `<prefix>/init.sh` if any overlay file is missing — it renders what's absent from the templates and is non-destructive to what exists (`[keep]` for every file already present). Anything it creates also needs step 6b. |
 | 8 | **Host SA** | `bash <prefix>/scripts/sync-hooks.sh` then `python3 <prefix>/scripts/gen-config.py`. **Restart the session** — settings are read at session start. |
 | 9 | **Host SA** | **Prove it:** `wf doctor --compliance` (every registry stream present + compliant) · `wf decoupling-lint --zone core` (0 hits) · `wf smoke` (green in both layouts). |
 | 10 | **Host SA** | Open the PR. Body carries the verification note: what ran, and the outcome. Host CR reviews; host SA merges. |
@@ -39,6 +40,10 @@ host's registry, ledger, ownership map, or **merge gates**. That is why core shi
 
 ## Verification checklist
 
+- [ ] **`git ls-files <prefix>/charters/` is non-empty and lists the concrete `<stream>.md` files** (not
+      just `*.template.md`). Same for `git ls-files <prefix>/config/streams.yaml`. *Presence on disk is
+      not evidence* — an ignored file is present, looks correct, and vanishes on the next clone. Check
+      **tracking**, not existence.
 - [ ] Every overlay file from Part A step 2 is present and **unchanged** after the add/pull.
 - [ ] `wf doctor --compliance` passes for every registered stream.
 - [ ] `wf decoupling-lint --zone core` = 0 hits.

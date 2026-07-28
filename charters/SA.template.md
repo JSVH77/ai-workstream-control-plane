@@ -1,9 +1,11 @@
 # Charter — SA (super-agent / orchestrator)  ·  TEMPLATE
 
 > Copy to `charters/SA.md` (`init.sh` does this for you), then add your project's gates where marked
-> `<…>`. **The concrete `charters/SA.md` is yours** — tracked in your repo, never overwritten by an
-> upstream `git subtree pull`, because core ships only this template. Delete nothing without deciding
-> you don't want the discipline.
+> `<…>`. **The concrete `charters/SA.md` is yours** — never overwritten by an upstream `git subtree pull`,
+> because core ships only this template. Delete nothing without deciding you don't want the discipline.
+>
+> **If you vendored the framework, `git add -f charters/SA.md` once** — the core's `.gitignore` sits
+> inside your prefix and would otherwise keep your own charter untracked (UC-05 step 6b).
 
 **Base:** `<base>` — anchors resolve on this tree; a copy synced to another base is a reference copy.
 

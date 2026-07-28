@@ -41,14 +41,20 @@ Also edit `ownership.yaml` (path-glob → owning stream: **edit**-authority, the
 
 ## 3. Mint charters (apply-authority)
 
+`init.sh` already rendered **`charters/SA.md`** from the shipped `SA.template.md` startup-kit charter —
+adopt it as-is and add your project's merge gates where marked. That concrete charter is **yours**: core
+ships only the template, so an upstream `git subtree pull` can never clobber your merge gates. (Vendored
+installs: `git add -f charters/SA.md` once — see the README warning.)
+
+Then mint one charter per **additional** stream:
+
 ```bash
 cp charters/_TEMPLATE.md charters/S1.md   # repeat per stream; fill in
 ```
 
-`init.sh` already rendered `charters/SA.md` and `charters/CR.md` from the shipped `*.template.md` startup-kit
-charters — adopt them as-is and add your project's merge gates and review lens where marked. Those concrete
-charters are **yours**: core ships only the templates, so an upstream `git subtree pull` can never clobber
-your merge gates.
+> **SA's charter says "merge post-review only" — that needs a reviewer to be satisfiable.** Onboard one
+> via [`use-cases/UC-01`](use-cases/UC-01-onboard-stream.md) (start from `charters/CR.template.md`), or
+> amend your `SA.md` deliberately. Don't leave SA charter-blocked with no reviewer to unblock it.
 
 ## 4. Install the hooks + generate settings
 

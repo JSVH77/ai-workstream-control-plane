@@ -145,7 +145,14 @@ never clobber a host's own registry, ledger, or merge gates. **Charters are in t
 reason:** a host's `charters/SA.md` carries *its* merge gates and domain rules — shipping a filled-in
 `SA.md` as core would overwrite them on subtree-add and conflict on every pull thereafter. Core ships
 `SA.template.md` / `CR.template.md`; the concrete copy is the host's. In a **host** project those same
-files *are* tracked (Tier A) — that is where they belong. The trade: a fresh clone of *this* repo can't run `decoupling-lint` or
+files *are* tracked (Tier A) — that is where they belong.
+
+> ⚠ **Vendored hosts: tracking the overlay takes one extra step.** This repo's `.gitignore` travels into
+> your `<prefix>/` on a subtree add, and git resolves ignore rules with the **deepest** file winning — so
+> it ignores *your* charters and config, and a negation in your root `.gitignore` will not override it.
+> Run `git add -f` once per overlay file (see [`use-cases/UC-05`](use-cases/UC-05-consume-via-subtree.md)
+> step 6b); after that they are tracked normally. Skip it and your overlay is missing from every fresh
+> clone, while looking perfectly fine on the machine that created it. The trade: a fresh clone of *this* repo can't run `decoupling-lint` or
 `gen-config` until `init.sh` has run, since both need an overlay to read. That is also why framework-self-CI
 is still an open question (spec §11).
 

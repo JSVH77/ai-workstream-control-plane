@@ -62,12 +62,13 @@ def _overlay_zone():
     return files
 
 ZONES = {
+    # NB: charters/*.template.md + _TEMPLATE.md live HERE, not in `template`. They are tracked core that
+    # every adopter renders its apply-authority from, so a host noun leaking in must FAIL the build — and
+    # only `core` is in `gated` below. The concrete charters/<stream>.md they render into are overlay
+    # (gitignored) and belong to _overlay_zone().
     "core": ["scripts/*.py", "scripts/wf", "scripts/*.sh", "hooks/*", "config/settings-base.json",
-             "runtime.md", "loops/README.md"],
-    # NB: charters/*.template.md + _TEMPLATE.md are TRACKED core and must be gated here — the concrete
-    # charters/<stream>.md they render into are overlay (gitignored) and belong to _overlay_zone().
-    "template": ["loop-template.md", "charters/README.md", "charters/_TEMPLATE.md",
-                 "charters/*.template.md", "use-cases/*", "*.example", "config/*.example*"],
+             "runtime.md", "loops/README.md", "charters/_TEMPLATE.md", "charters/*.template.md"],
+    "template": ["loop-template.md", "charters/README.md", "use-cases/*", "*.example", "config/*.example*"],
     "overlay": _overlay_zone(),
     "narrative": ["README.md", "control-plane-spec.md", "DISASTER-RECOVERY.md", "SA-BOOTSTRAP.md",
                   "QUICKSTART.md", "review-ledger.md", "review-ledger.template.md"],

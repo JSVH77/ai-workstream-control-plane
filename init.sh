@@ -36,10 +36,12 @@ copy_example "$FW/config/project.example.yaml"   "$FW/config/project.yaml"
 copy_example "$FW/config/streams.example.yaml"   "$FW/config/streams.yaml"
 copy_example "$FW/config/ownership.example.yaml" "$FW/ownership.yaml"
 copy_example "$FW/review-ledger.template.md"     "$FW/review-ledger.md"
-# Concrete charters (apply-authority). Core ships templates only so an upstream subtree pull can never
+# SA's concrete charter (apply-authority). Core ships templates only so an upstream subtree pull can never
 # clobber a host's own merge gates — see the charters block in .gitignore.
+# Deliberately NOT rendering charters/CR.md here: the shipped registry defines no CR stream, so a rendered
+# CR.md would be a charter for a stream `doctor --compliance` never checks and `decoupling-lint`'s overlay
+# zone never scans (it derives charters FROM the registry). UC-01 mints it when you onboard a reviewer.
 copy_example "$FW/charters/SA.template.md"       "$FW/charters/SA.md"
-copy_example "$FW/charters/CR.template.md"       "$FW/charters/CR.md"
 
 # The orchestrator's STATE.md — per-worktree, gitignored (Tier C). Its `**Stream:**` token is the dispatch
 # ROUTER key: it MUST equal the registry key, or every envelope to this stream silently goes nowhere.
@@ -131,8 +133,11 @@ cat <<EOF
   1. \$EDITOR config/project.yaml     # project_name, hook_namespace, protected_paths, decoupling_nouns
   2. \$EDITOR config/streams.yaml     # one entry per long-lived session; SA keeps can_merge: true
   3. \$EDITOR ownership.yaml          # path-glob -> owning stream (edit-authority)
-  4. \$EDITOR charters/SA.md charters/CR.md      # rendered above from *.template.md — add your gates
+  4. \$EDITOR charters/SA.md                     # rendered above from SA.template.md — add your gates
      cp charters/_TEMPLATE.md charters/<ID>.md   # one charter per ADDITIONAL stream (apply-authority)
+     # NB: SA.md ships "merge post-review only" — that needs a REVIEWER to be satisfiable.
+     # Onboard one via use-cases/UC-01 (charters/CR.template.md is the starting point), or
+     # amend your SA.md deliberately. Don't leave SA charter-blocked with no reviewer.
   5. git worktree add ../<repo>-<lane> -b <branch> origin/main   # one worktree per non-SA stream
   6. bash scripts/sync-hooks.sh      # install hooks + wf to ~/.claude/hooks/<hook_namespace>/
   7. python3 scripts/gen-config.py   # re-run after 1-5: regenerates each worktree's .claude/settings.json

@@ -45,8 +45,10 @@ Also edit `ownership.yaml` (path-glob → owning stream: **edit**-authority, the
 cp charters/_TEMPLATE.md charters/S1.md   # repeat per stream; fill in
 ```
 
-`charters/SA.md` ships filled in as a generic startup-kit charter — adopt it as-is and add your project's
-merge gates where marked.
+`init.sh` already rendered `charters/SA.md` and `charters/CR.md` from the shipped `*.template.md` startup-kit
+charters — adopt them as-is and add your project's merge gates and review lens where marked. Those concrete
+charters are **yours**: core ships only the templates, so an upstream `git subtree pull` can never clobber
+your merge gates.
 
 ## 4. Install the hooks + generate settings
 

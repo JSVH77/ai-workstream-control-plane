@@ -50,8 +50,15 @@ def gen_settings(base, can_merge, project_denies):
     for d in project_denies:                                              # project overlay (dedup, order-stable)
         if d not in deny:
             deny.append(d)
+    allow = list(s["permissions"].get("allow", []))
     if not can_merge:
         deny += MERGE_DENY
+        # ...and drop the same rules from `allow`. The floor allows `gh pr merge` (SA needs it), so without
+        # this a merge-denied stream carries the rule in BOTH lists. Deny wins in Claude Code, so it was
+        # never exploitable — but a settings file that both allows and denies its most consequential
+        # permission cannot be audited by reading it, which is the whole point of generating it.
+        allow = [a for a in allow if a not in MERGE_DENY]
+    s["permissions"]["allow"] = allow
     s["permissions"]["deny"] = deny
     return s
 

@@ -9,7 +9,10 @@
   you lose recall with no error and no warning. So it is an INDEX, not a knowledge base.
 
   Rules that keep it working:
-    - ONE line per entry, under ~200 chars: `- [name](file.md) — the hook, in a few words`
+    - ONE line per entry, under ~200 chars: `- [name](<name>.md) — the hook, in a few words`
+      (The angle brackets are only so this example is not itself parsed as a pointer — drop them in
+       real entries. mem-hygiene scans for a parenthesised .md filename and would otherwise report a
+       false DANGLER on every fresh adopter's first run.)
     - Detail lives in the topic file, never here.
     - Cold entries move to ARCHIVE.md (same dir) — that tier is not loaded.
     - Every file in the bucket should have a pointer here; every pointer should resolve to a file.

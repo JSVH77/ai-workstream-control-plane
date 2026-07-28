@@ -1,14 +1,17 @@
-# Charter — SA (super-agent / orchestrator)
+# Charter — SA (super-agent / orchestrator)  ·  TEMPLATE
 
-**Base:** `main` — anchors resolve on this tree; a copy synced to another base is a reference copy.
+> Copy to `charters/SA.md` (`init.sh` does this for you), then add your project's gates where marked
+> `<…>`. **The concrete `charters/SA.md` is yours** — tracked in your repo, never overwritten by an
+> upstream `git subtree pull`, because core ships only this template. Delete nothing without deciding
+> you don't want the discipline.
+
+**Base:** `<base>` — anchors resolve on this tree; a copy synced to another base is a reference copy.
 
 > **Apply-authority.** The rulebook SA must obey when orchestrating, merging, reviewing, and building the
 > control plane. Edit-lane (`config/streams.yaml`): the framework files. SA is the **only** stream that
 > may merge.
 >
-> This ships as the **startup-kit charter**: generic enough to adopt as-is, because every line below is a
-> discipline that applies to any SA. Add your project's gates where marked `<…>`; delete nothing without
-> deciding you don't want the discipline.
+> Every line below is a discipline that applies to any SA, so this is safe to adopt as-is.
 
 ## The merge gate (mandatory before `gh pr merge`)
 

@@ -26,3 +26,10 @@ config/project.yaml
 config/streams.yaml
 ownership.yaml
 review-ledger.md
+# Concrete charters are overlay too, for the same reason: a host's SA.md carries ITS merge gates and
+# domain rules, which an upstream pull must never clobber. Core ships `*.template.md` + `_TEMPLATE.md`;
+# `init.sh` renders the concrete copies. In a HOST project the concrete charters ARE tracked (Tier A).
+charters/*.md
+!charters/README.md
+!charters/_TEMPLATE.md
+!charters/*.template.md

@@ -102,7 +102,13 @@ wf smoke                  # a blank repo stands up the whole substrate, in BOTH 
 ```
 
 Your repo needs these `.gitignore` entries (`init.sh` does not write them for you):
-`.workflow-runtime/`, `__pycache__/`, `STATE.md`, `STATE.journal.md`.
+`.workflow-runtime/`, `__pycache__/`, `STATE.md`, `STATE.journal.md`, `.claude/settings.local.json`.
+
+> **Restart the session after `init.sh`.** Settings load at session *start*, so the session that bootstraps
+> the repo is still running on your global permissions — no project floor. This repo ships a **committed
+> baseline** `.claude/settings.json` so a fresh clone has the safety denies immediately, and `gen-config`
+> specializes it per worktree; but only a restart makes either live in your session. Personal overrides go
+> in `.claude/settings.local.json`, which `gen-config` never touches. (Spec §3.7.)
 
 ## Everyday commands
 

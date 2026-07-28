@@ -6,9 +6,16 @@ __pycache__/
 # --- per-worktree operator state (Tier C) — never committed ---
 STATE.md
 STATE.journal.md
-.claude/settings.json
 .claude/settings.local.json
 .claude/transcript-backups/
+
+# NOTE: `.claude/settings.json` is deliberately NOT ignored — it is a COMMITTED BASELINE (the generic
+# permission floor) so the safety denies are active from `git clone`, before init.sh/gen-config have run.
+# Settings load at session START, so a generated-only file leaves the first session with no floor at all.
+# gen-config then SPECIALIZES it per worktree; in a worktree whose merge policy differs from the baseline
+# the file will show as modified — that is expected. Do NOT commit a stream's specialized copy over the
+# baseline: it would push one stream's merge policy onto everyone. Personal overrides go in
+# settings.local.json (ignored above; gen-config never touches it).
 
 # --- the HOST OVERLAY (see README "Why the overlay is not tracked here") ---
 # This repo ships the framework CORE + *.example.yaml templates. The concrete overlay is per-adopter:

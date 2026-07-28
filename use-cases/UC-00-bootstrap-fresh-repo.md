@@ -32,6 +32,10 @@ one-time stand-up.
 
 ## Notes
 
+- **Restart after step 5.** Settings load at session **start**, so the session that bootstrapped the repo is
+  still on your global permissions — no project floor, no hook wiring. The committed baseline
+  `.claude/settings.json` gives a fresh *clone* the safety denies immediately, and `gen-config` specializes
+  it; but only a restart makes either live in a running session. (Spec §3.7.)
 - **Launch each stream from ITS worktree dir** — identity = the `STATE.md` in the launch cwd. Launching from
   the wrong dir brings a stream up as the wrong identity (a known foot-gun).
 - **SA merges** (post-review); all other streams are `can_merge: false` (enforced by `gen-config` on both the

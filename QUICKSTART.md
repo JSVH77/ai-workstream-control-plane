@@ -57,6 +57,23 @@ python3 scripts/gen-config.py       # writes each registered worktree's .claude/
 
 Add `~/.claude/hooks/<hook_namespace>/` to your PATH so `wf` is available everywhere (or call it by full path).
 
+> ### ⚠ The bootstrap session is pre-floor — restart it
+>
+> **Settings load at session START.** The session in which you cloned the repo and ran `init.sh` is running
+> on your **global** permissions: no project floor, none of the `rm -rf /` · force-push · `sudo` denies, no
+> hook wiring. Nothing that runs *during* that session can change this.
+>
+> - This repo ships a **committed baseline** `.claude/settings.json` (the generic floor), so a fresh clone
+>   has the safety denies from the start — but a session already running when the file appears won't see it.
+> - `init.sh` writes/refreshes the floor and runs `gen-config` for you, then prints a restart notice.
+> - **Restart the session** after `sync-hooks` + `gen-config`. Then the floor and hooks are live.
+>
+> **`.claude/settings.json` is generated** — `gen-config` overwrites it. Put your personal, machine-specific
+> allows in **`.claude/settings.local.json`** instead: it is gitignored and `gen-config` never touches it.
+> Once `gen-config` has run, `settings.json` will normally show as *modified* against the committed
+> baseline. That is expected (spec §3.7) — don't commit your specialized copy over the baseline, or you
+> push your worktree's merge policy onto every other stream.
+
 ## 5. Seed each worktree's STATE.md
 
 Each worktree needs a `STATE.md` whose header names the stream (the hooks + router read it):

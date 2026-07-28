@@ -123,8 +123,15 @@ def main():
                 print(f"  {x['file']}:{x['line']}  [{x['why']}]  {x['text']}")
             if len(v) > 40:
                 print(f"  … +{len(v) - 40} more")
-        print("\n" + ("✅ core zone clean — no host-project nouns leak into the framework core"
-                      if nfail == 0 else f"❌ {nfail} host-project noun(s) in the CORE zone — decouple them"))
+        # Gate-soundness: say what was ACTUALLY checked. A `--zone template` run must not print
+        # "core zone clean" — that is a green claim about a zone this invocation never scanned.
+        if nfail:
+            print(f"\n❌ {nfail} host-project noun(s) in the CORE zone — decouple them")
+        elif gated:
+            print("\n✅ core zone clean — no host-project nouns leak into the framework core")
+        else:
+            print(f"\n☑️  {', '.join(zones)} scanned (report-only) — the CORE zone was NOT checked "
+                  f"by this run; use `--zone core` (or `--zone all`) for the gate")
     sys.exit(1 if nfail else 0)
 
 if __name__ == "__main__":

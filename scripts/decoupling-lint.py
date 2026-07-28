@@ -6,8 +6,11 @@ exits non-zero if any leak into the CORE zone. It is the exit ORACLE for a `wf l
 AND a permanent CI gate for the framework repo.
 
 ZONES (a flat blacklist is either noisy or gets weakened — so zone it):
-  - core     : scripts/**, hooks/**, config/settings-base.json, runtime.md, loops/README.md
-               → MUST be clean. This is what ships as the framework.
+  - core     : scripts/**, hooks/**, config/settings-base.json, runtime.md, loops/README.md,
+               charters/_TEMPLATE.md, charters/*.template.md
+               → MUST be clean. This is what ships as the framework. The charter templates live here
+                 (not in `template`) because every adopter renders its apply-authority from them, so a
+                 host noun leaking in must FAIL the build — and `core` is the only gated zone.
   - template : loop-template.md, charters/README.md, use-cases/**, *.example
                → placeholders/examples; project nouns tolerated as illustration (not gated here).
   - overlay  : config/streams.yaml, config/project.yaml, ownership.yaml, charters/{stream}.md
@@ -62,8 +65,12 @@ def _overlay_zone():
     return files
 
 ZONES = {
+    # NB: charters/*.template.md + _TEMPLATE.md live HERE, not in `template`. They are tracked core that
+    # every adopter renders its apply-authority from, so a host noun leaking in must FAIL the build — and
+    # only `core` is in `gated` below. The concrete charters/<stream>.md they render into are overlay
+    # (gitignored) and belong to _overlay_zone().
     "core": ["scripts/*.py", "scripts/wf", "scripts/*.sh", "hooks/*", "config/settings-base.json",
-             "runtime.md", "loops/README.md"],
+             "runtime.md", "loops/README.md", "charters/_TEMPLATE.md", "charters/*.template.md"],
     "template": ["loop-template.md", "charters/README.md", "use-cases/*", "*.example", "config/*.example*"],
     "overlay": _overlay_zone(),
     "narrative": ["README.md", "control-plane-spec.md", "DISASTER-RECOVERY.md", "SA-BOOTSTRAP.md",
@@ -120,8 +127,15 @@ def main():
                 print(f"  {x['file']}:{x['line']}  [{x['why']}]  {x['text']}")
             if len(v) > 40:
                 print(f"  … +{len(v) - 40} more")
-        print("\n" + ("✅ core zone clean — no host-project nouns leak into the framework core"
-                      if nfail == 0 else f"❌ {nfail} host-project noun(s) in the CORE zone — decouple them"))
+        # Gate-soundness: say what was ACTUALLY checked. A `--zone template` run must not print
+        # "core zone clean" — that is a green claim about a zone this invocation never scanned.
+        if nfail:
+            print(f"\n❌ {nfail} host-project noun(s) in the CORE zone — decouple them")
+        elif gated:
+            print("\n✅ core zone clean — no host-project nouns leak into the framework core")
+        else:
+            print(f"\n☑️  {', '.join(zones)} scanned (report-only) — the CORE zone was NOT checked "
+                  f"by this run; use `--zone core` (or `--zone all`) for the gate")
     sys.exit(1 if nfail else 0)
 
 if __name__ == "__main__":

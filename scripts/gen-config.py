@@ -50,8 +50,20 @@ def gen_settings(base, can_merge, project_denies):
     for d in project_denies:                                              # project overlay (dedup, order-stable)
         if d not in deny:
             deny.append(d)
+    allow = list(s["permissions"].get("allow", []))
     if not can_merge:
         deny += MERGE_DENY
+        # ...and drop the same rules from `allow`. The floor allows `gh pr merge` (SA needs it), so without
+        # this a merge-denied stream carried the rule verbatim in BOTH lists. Deny wins in Claude Code, so
+        # it was never exploitable — this is an auditability fix: a reader should not find the literal rule
+        # on both sides.
+        # LIMIT, stated so nobody reads more into this than it does: the strip is EXACT-MATCH, and the
+        # floor's allow list ends with a blanket `Bash(*)`. The generated file therefore still permits
+        # `gh pr merge` BY PATTERN while denying it literally. That is the intended posture (deny is the
+        # enforcement surface, allow is the convenience surface) — but it means "audit by reading `allow`"
+        # is not achievable here, and only `deny` is load-bearing for the SA-only-merge policy.
+        allow = [a for a in allow if a not in MERGE_DENY]
+    s["permissions"]["allow"] = allow
     s["permissions"]["deny"] = deny
     return s
 

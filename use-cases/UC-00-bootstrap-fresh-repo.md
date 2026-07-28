@@ -16,7 +16,11 @@ one-time stand-up.
 2. **Declare streams.** `streams.example.yaml` → `streams.yaml`; keep SA (orchestrator, `can_merge: true`)
    on the main root; add one entry per stream with a distinct `lane`, `base`, and `governs:` charter.
 3. **Create worktrees** for each non-SA stream (`git worktree add ../<name> -b <branch> origin/<base>`).
-4. **Mint charters** from `_TEMPLATE.md` (one per stream); wire each via `governs:` in the registry.
+4. **Charters.** `init.sh` renders `charters/SA.md` from `SA.template.md`; mint the rest from
+   `_TEMPLATE.md` (one per stream) and wire each via `governs:` in the registry. SA's charter requires a
+   reviewer to merge — onboard one via UC-01 (from `CR.template.md`) or amend `SA.md` deliberately.
+   **Vendored installs:** `git add -f` each concrete charter, or the prefix's own `.gitignore` keeps it
+   untracked (UC-05 step 6b).
 5. **Install + generate.** `sync-hooks.sh` (hooks + `wf` → `~/.claude/hooks/<namespace>/`);
    `gen-config.py` (per-worktree `settings.json`, incl. SA-only merge scoping).
 6. **Seed `STATE.md`** in each worktree (`**Stream:** <id>` header — the hooks + dispatch router read it).

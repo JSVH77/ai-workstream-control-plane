@@ -6,8 +6,11 @@ exits non-zero if any leak into the CORE zone. It is the exit ORACLE for a `wf l
 AND a permanent CI gate for the framework repo.
 
 ZONES (a flat blacklist is either noisy or gets weakened — so zone it):
-  - core     : scripts/**, hooks/**, config/settings-base.json, runtime.md, loops/README.md
-               → MUST be clean. This is what ships as the framework.
+  - core     : scripts/**, hooks/**, config/settings-base.json, runtime.md, loops/README.md,
+               charters/_TEMPLATE.md, charters/*.template.md
+               → MUST be clean. This is what ships as the framework. The charter templates live here
+                 (not in `template`) because every adopter renders its apply-authority from them, so a
+                 host noun leaking in must FAIL the build — and `core` is the only gated zone.
   - template : loop-template.md, charters/README.md, use-cases/**, *.example
                → placeholders/examples; project nouns tolerated as illustration (not gated here).
   - overlay  : config/streams.yaml, config/project.yaml, ownership.yaml, charters/{stream}.md

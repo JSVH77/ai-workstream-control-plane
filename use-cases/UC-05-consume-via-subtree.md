@@ -36,7 +36,7 @@ host's registry, ledger, ownership map, or **merge gates**. That is why core shi
 | 1 | **Host SA** | `git subtree pull --prefix=<prefix> <framework-remote> <ref> --squash` on a branch, never on the base. |
 | 2 | **Host SA** | **Expect conflicts only in the shared narrative** — `README.md`, `control-plane-spec.md`, `QUICKSTART.md`, `DISASTER-RECOVERY.md`. Overlay files should not conflict: they exist in *ours*, never in the subtree history, so the three-way merge leaves them alone. **If an overlay file conflicts, stop** — it means that file is being tracked upstream too, which is a boundary bug worth reporting to Framework SA rather than resolving locally. |
 | 3 | **Host SA** | Resolve narrative conflicts in favour of upstream **unless** the host deliberately customized the file. A host that keeps editing shared narrative in place will conflict on every pull — the durable fix is to keep host-specific prose in host-owned docs and leave the vendored narrative pristine. |
-| 4 | **Host SA** | Re-run step 8–9 of Part A (hooks, gen-config, restart, the three gates). A pull can add a script whose hook wiring or settings floor changed. |
+| 4 | **Host SA** | Re-run steps **7–9** of Part A (init.sh, hooks, gen-config, restart, the three gates). A pull can add a script whose hook wiring or settings floor changed — and it can ship a **new overlay template**, whose rendered file needs step 6b's `git add -f` or it stays silently untracked. Skipping step 7 here reproduces Part A's failure mode on the upgrade path. |
 
 ## Verification checklist
 

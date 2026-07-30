@@ -38,20 +38,41 @@ WF = cp.framework_dir(__file__)             # the framework dir — repo root (f
 def _project():
     return cp.load_yaml(cp.config_file(WF, "project.yaml"))
 
+#: Auto-derived `project_name` variants match only at non-alphanumeric boundaries. Plain substring
+#: matching made the gate BUILD-FATAL on the framework's own shipped files for short host names:
+#: `project_name: Aster` hit "DISASTER-RECOVERY.md" in charters/SA.template.md. Lookarounds are used
+#: instead of `\b` because a name may legitimately begin or end with a non-word character (`@scope/pkg`),
+#: where `\b` inverts its meaning and silently stops matching.
+_L, _R = r"(?<![A-Za-z0-9])", r"(?![A-Za-z0-9])"
+_SHORT_NAME = 5     # below this, an auto-derived noun is likely a real English word — warn, don't guess
+
 def load_forbidden():
     """Build the forbidden-noun set from THIS project's config — a hardcoded set for one host project
-    would leave every OTHER host's nouns undetected. `project_name` is auto-forbidden (case-insensitive, with a
-    de-spaced variant); `decoupling_nouns` are the project's explicit extra regexes. Absent config → empty
-    (the gate then only warns it has nothing to enforce)."""
+    would leave every OTHER host's nouns undetected. `project_name` is auto-forbidden (case-insensitive,
+    with a de-spaced variant) and **boundary-anchored**; `decoupling_nouns` are the project's explicit
+    regexes, compiled RAW so a project that wants substring or fuzzy matching can still ask for it.
+    Absent config → empty (the gate then only warns it has nothing to enforce).
+
+    Trade-off, stated because it is a real limit: boundary-anchoring means `project_name: Aster` no longer
+    flags `AsterClaudeEngine` (concatenation, no boundary). That is deliberate — under-detection is
+    recoverable by adding the compound to `decoupling_nouns`, whereas a false positive on files the
+    adopter never touched makes the whole gate un-runnable, and an un-runnable gate gets deleted."""
     p = _project()
     out = []
     name = p.get("project_name")
     if name:
         variants = {re.escape(str(name)), re.escape(str(name).replace(" ", "")), re.escape(str(name).lower())}
-        out.append((re.compile("|".join(sorted(variants)), re.I), f"project name ({name})"))
+        shortest = min(len(str(name)), len(str(name).replace(" ", "")))
+        if shortest < _SHORT_NAME:
+            print(f"⚠️  decoupling-lint: project_name {name!r} is short ({shortest} chars). It is "
+                  f"boundary-anchored, so it will not match inside longer words — but if it is also an "
+                  f"ordinary English word it may still flag generic framework prose. Prefer an explicit "
+                  f"`decoupling_nouns` list in config/project.yaml.", file=sys.stderr)
+        out.append((re.compile("|".join(_L + v + _R for v in sorted(variants)), re.I),
+                    f"project name ({name})"))
     for pat in (p.get("decoupling_nouns") or []):
         try:
-            out.append((re.compile(pat), "project noun"))
+            out.append((re.compile(pat), "project noun"))   # RAW by design — see docstring
         except re.error:
             pass
     return out

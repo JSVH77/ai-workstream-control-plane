@@ -146,7 +146,7 @@ def build():
     g = report["global"]
     g["unregistered_worktrees"] = [w["path"] for w in wts if w["path"] not in matched_paths]
     prs = sh(["gh", "pr", "list", "--json", "number,title,headRefName",
-              "--jq", '.[]|"#\(.number) [\(.headRefName)] \(.title)"'])
+              "--jq", r'.[]|"#\(.number) [\(.headRefName)] \(.title)"'])
     g["open_prs"] = None if prs is None else [l for l in prs.splitlines() if l]   # None = gh unavailable
     stash = sh(["git", "stash", "list"], cwd=str(REPO_ROOT))
     g["stashes"] = None if stash is None else [l for l in stash.splitlines() if l]
@@ -334,7 +334,14 @@ if __name__ == "__main__":
     if "--compliance" in sys.argv:
         # GATE mode: local + offline (no gh/network), OPERATOR-MACHINE (must run where the worktrees live).
         # Exits non-zero if ANY registry stream is not present+ready. Does NOT run the full recovery report.
-        rows = compliance(load_registry(), worktrees())
+        reg = load_registry()
+        if not reg:
+            # Gate-soundness: an empty/unreadable registry (missing streams.yaml, PyYAML absent, YAML error)
+            # must FAIL the gate, never pass it vacuously as "all 0 streams compliant".
+            print("❌ doctor --compliance: no streams loaded from config/streams.yaml — cannot gate an empty "
+                  "registry (missing file, unreadable YAML, or PyYAML not installed)", file=sys.stderr)
+            sys.exit(2)
+        rows = compliance(reg, worktrees())
         if "--json" in sys.argv:
             print(json.dumps({"compliance": rows}, indent=2))
         else:

@@ -19,7 +19,8 @@
 set -uo pipefail
 
 FRAMEWORK="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"      # this repo's framework dir
-TMP="$(mktemp -d)"; HOMEDIR="$TMP/home"
+TMP="$(mktemp -d)"; [ -n "$TMP" ] && [ -d "$TMP" ] || { echo "smoke: mktemp failed" >&2; exit 1; }
+HOMEDIR="$TMP/home"
 mkdir -p "$HOMEDIR"
 cleanup(){ rm -rf "$TMP"; }
 trap cleanup EXIT
@@ -90,7 +91,7 @@ MD
   # cd into the fresh repo (no subshell — a subshell would sandbox $fail and never propagate the verdict).
   export HOME="$HOMEDIR"
   local S="$fw/scripts"
-  cd "$repo"
+  cd "$repo" || { bad "cd $repo"; return; }
   check "doctor runs"                    python3 "$S/doctor.py"
   check "decoupling-lint core clean"     python3 "$S/decoupling-lint.py" --zone core
   check "gen-config --dry-run (preview)" python3 "$S/gen-config.py" --dry-run

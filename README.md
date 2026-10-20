@@ -6,6 +6,9 @@ repository — without losing state to crashes, colliding on files, or drifting 
 This is the **project-agnostic** framework. A host project adds only its overlay (`config/project.yaml`,
 `config/streams.yaml`, `ownership.yaml`, `review-ledger.md`, `charters/*.md`).
 
+MIT licensed (`LICENSE`). Requires `git`, `bash`, Python 3.9+ and PyYAML (`python3 -m pip install pyyaml`); nothing
+else. Security model and how to report: `SECURITY.md`. Contributing: `CONTRIBUTING.md`.
+
 > **New here?** → [`QUICKSTART.md`](QUICKSTART.md) (day-0 stand-up, ~10 min) ·
 > [`use-cases/UC-00-bootstrap-fresh-repo.md`](use-cases/UC-00-bootstrap-fresh-repo.md) (the playbook) ·
 > [`control-plane-spec.md`](control-plane-spec.md) (the model — **§10 is the live-vs-design source of truth**).

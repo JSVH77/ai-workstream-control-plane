@@ -59,9 +59,14 @@ LEASES = cp.main_root(REPO_ROOT) / ".workflow-runtime" / "leases"
 def now():
     return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+STREAM_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
 def stream_id(explicit=None):
-    """--stream wins; else the worktree's STATE.md `**Stream:**` token (same regex inbox-peek/doctor use)."""
+    """--stream wins; else the worktree's STATE.md `**Stream:**` token (same regex inbox-peek/doctor use).
+    The id becomes the lease FILE NAME (and `release` unlinks it), so it is restricted to a safe alphabet."""
     if explicit:
+        if not STREAM_RE.match(explicit):
+            raise SystemExit(f"loop: --stream must match [A-Za-z0-9_-]{{1,64}} (got {explicit!r})")
         return explicit
     try:
         for line in (Path.cwd() / "STATE.md").read_text().splitlines():

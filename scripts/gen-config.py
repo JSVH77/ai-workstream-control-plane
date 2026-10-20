@@ -73,7 +73,22 @@ def load_project():
     ns = p.get("hook_namespace")
     if not ns:
         raise SystemExit("gen-config: config/project.yaml missing hook_namespace")
-    denies = [f"Bash(rm -rf {x})" for x in (p.get("protected_paths") or [])] + list(p.get("extra_denies") or [])
+    paths = p.get("protected_paths") or []
+    extra = p.get("extra_denies") or []
+    if not isinstance(paths, list) or not isinstance(extra, list):
+        raise SystemExit("gen-config: protected_paths and extra_denies must be YAML lists")
+    # A Bash rule with no `*` matches ONE exact command string (`Bash(rm -rf scripts)` does not match
+    # `rm -rf scripts/` or `rm -r scripts`). `*` matches any text, so `Bash(rm * scripts*)` covers every rm
+    # flag spelling and anything under the path; the `./` form is listed too. Deny rules apply to every
+    # subcommand of a compound command. This is a guardrail against the model's mistakes, not a security
+    # boundary — `/bin/rm` or `bash -c` bypass any Bash rule (see SECURITY.md).
+    denies = []
+    for x in paths:
+        x = str(x).strip().rstrip("/")
+        if not x:
+            continue
+        denies += [f"Bash(rm * {x}*)", f"Bash(rm * ./{x}*)"]
+    denies += [str(d) for d in extra]
     return ns, denies
 
 def main():
@@ -87,7 +102,10 @@ def main():
     reg = cp.load_yaml(cp.config_file(FRAMEWORK, "streams.yaml")).get("streams", {})
     paths = registered_paths()
     for sid, meta in reg.items():
-        wt = meta.get("worktree")
+        wt = (meta or {}).get("worktree")
+        if not wt:
+            print(f"[skip]  {sid:5} {'(no worktree)':24} — registry entry has no `worktree` key")
+            continue
         if a.worktree and wt != a.worktree:
             continue
         expected = str(DEV_ROOT / wt)

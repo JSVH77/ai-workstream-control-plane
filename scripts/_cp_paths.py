@@ -94,6 +94,12 @@ def load_yaml(path):
     as 'could not load' and fail loudly — never as 'nothing to enforce'."""
     try:
         import yaml
-        return yaml.safe_load(Path(path).read_text()) or {}
+    except ImportError:
+        # The ONE third-party dependency. Returning {} here would make every gate that reads config pass
+        # vacuously (gate-soundness) — so fail loudly instead.
+        raise SystemExit("control-plane: PyYAML is required (`python3 -m pip install pyyaml`)")
+    try:
+        data = yaml.safe_load(Path(path).read_text()) or {}
+        return data if isinstance(data, dict) else {}
     except Exception:
         return {}

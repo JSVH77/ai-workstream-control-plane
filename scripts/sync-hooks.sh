@@ -11,6 +11,9 @@ HOOKS="$(cd "$(dirname "${BASH_SOURCE[0]}")/../hooks" && pwd)"
 SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NS="$(grep -E '^hook_namespace:' "$SCRIPTS/../config/project.yaml" | head -1 | sed -E 's/^hook_namespace:[[:space:]]*//; s/["'"'"']//g; s/[[:space:]]*(#.*)?$//')"
 [ -n "$NS" ] || { echo "sync-hooks: no hook_namespace in config/project.yaml" >&2; exit 1; }
+case "$NS" in
+  *[!A-Za-z0-9_-]*) echo "sync-hooks: hook_namespace must match [A-Za-z0-9_-]+ (got '$NS') — it names a directory under ~/.claude/hooks" >&2; exit 1 ;;
+esac
 DST="$HOME/.claude/hooks/$NS"
 mkdir -p "$DST"
 # hooks

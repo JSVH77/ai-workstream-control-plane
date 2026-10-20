@@ -52,8 +52,8 @@ def load_forbidden():
     for pat in (p.get("decoupling_nouns") or []):
         try:
             out.append((re.compile(pat), "project noun"))
-        except re.error:
-            pass
+        except re.error as e:
+            print(f"⚠️  decoupling-lint: ignoring invalid decoupling_nouns regex {pat!r}: {e}", file=sys.stderr)
     return out
 
 def _overlay_zone():

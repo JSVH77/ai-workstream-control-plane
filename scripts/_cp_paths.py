@@ -56,12 +56,13 @@ def framework_in(root):
     if (root / MARKER).exists():
         return root
     try:
-        for child in sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith(".")):
-            if (child / MARKER).exists():
-                return child
+        hits = [c for c in sorted(root.iterdir()) if c.is_dir() and not c.name.startswith(".") and (c / MARKER).exists()]
     except Exception:
-        pass
-    return root
+        hits = []
+    if len(hits) > 1:
+        raise SystemExit(f"control-plane: more than one framework dir under {root} ({', '.join(h.name for h in hits)}) "
+                         f"— set CP_FRAMEWORK_DIR to the one to use")
+    return hits[0] if hits else root
 
 
 def repo_root(framework):
@@ -94,6 +95,12 @@ def load_yaml(path):
     as 'could not load' and fail loudly — never as 'nothing to enforce'."""
     try:
         import yaml
-        return yaml.safe_load(Path(path).read_text()) or {}
+    except ImportError:
+        # The ONE third-party dependency. Returning {} here would make every gate that reads config pass
+        # vacuously (gate-soundness) — so fail loudly instead.
+        raise SystemExit("control-plane: PyYAML is required (`python3 -m pip install pyyaml`)")
+    try:
+        data = yaml.safe_load(Path(path).read_text()) or {}
+        return data if isinstance(data, dict) else {}
     except Exception:
         return {}

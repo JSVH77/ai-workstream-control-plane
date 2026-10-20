@@ -78,7 +78,8 @@ if [ "$SEED_MEMORY" = 1 ]; then
   # The vendor auto-memory bucket is keyed by the MAIN worktree's absolute path; a fresh adopter's bucket
   # is EMPTY, so a new SA starts memory-blind. Seed it from the git-tracked starter set (git is the durable
   # source of truth; the bucket is a thin cache — control-plane-spec §8).
-  BUCKET="$HOME/.claude/projects/$(printf '%s' "$ROOT" | tr '/' '-')/memory"
+  # Claude Code's project slug maps EVERY non-alphanumeric character to '-' (not only '/').
+  BUCKET="$HOME/.claude/projects/$(printf '%s' "$ROOT" | tr -c 'A-Za-z0-9' '-')/memory"
   mkdir -p "$BUCKET"
   echo ""
   echo "--- seeding vendor memory bucket: $BUCKET"
@@ -111,6 +112,8 @@ NS="$(grep -E '^hook_namespace:' "$FW/config/project.yaml" 2>/dev/null | head -1
       | sed -E 's/^hook_namespace:[[:space:]]*//; s/["'"'"']//g; s/[[:space:]]*(#.*)?$//')"
 if [ -z "$NS" ]; then
   echo "  [warn]  no hook_namespace in config/project.yaml — skipping floor; set it, then re-run" >&2
+elif printf '%s' "$NS" | grep -qE '[^A-Za-z0-9_-]'; then
+  echo "  [warn]  hook_namespace '$NS' must match [A-Za-z0-9_-]+ (it names a directory under ~/.claude/hooks) — skipping floor" >&2
 elif [ -f "$ROOT/.claude/settings.json" ]; then
   echo "  [keep]  .claude/settings.json — already present, not overwritten"
 else

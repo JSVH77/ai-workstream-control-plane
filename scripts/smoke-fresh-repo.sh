@@ -84,8 +84,11 @@ MD
 __pycache__/
 STATE.md
 STATE.journal.md
+.claude/transcript-backups/
 MD
-  git -C "$repo" add -A && git -C "$repo" commit -qm "bootstrap" && git -C "$repo" branch -M main
+  git -C "$repo" -c commit.gpgsign=false -c core.hooksPath=/dev/null add -A \
+    && git -C "$repo" -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -qm "bootstrap" \
+    && git -C "$repo" branch -M main
 
   # 4. run the substrate. HOME override => sync-hooks / mem-hygiene stay inside the sandbox.
   # cd into the fresh repo (no subshell — a subshell would sandbox $fail and never propagate the verdict).

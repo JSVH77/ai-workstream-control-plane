@@ -174,7 +174,20 @@
       "Bash(kill -9 1)",
       "Bash(shutdown:*)",
       "Bash(reboot:*)",
-      "Bash(sudo:*)"
+      "Bash(sudo:*)",
+      "Bash(git push * +*)",
+      "Bash(git push * --delete*)",
+      "Bash(git push * :*)",
+      "Bash(git worktree remove *)",
+      "Bash(git stash drop*)",
+      "Bash(git stash clear*)",
+      "Bash(rm -fr /*)",
+      "Bash(rm -fr ~*)",
+      "Bash(rm -rf $HOME*)",
+      "Bash(rm -fr $HOME*)",
+      "Bash(rm -rf ..*)",
+      "Bash(kill -9 -1)",
+      "Bash(find / -delete*)"
     ]
   },
   "hooks": {
@@ -183,7 +196,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/aiwcp/session-start.sh"
+            "command": "[ -x \"$HOME/.claude/hooks/aiwcp/session-start.sh\" ] && \"$HOME/.claude/hooks/aiwcp/session-start.sh\" || true"
           }
         ]
       }
@@ -193,7 +206,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/aiwcp/stop-journal.sh"
+            "command": "[ -x \"$HOME/.claude/hooks/aiwcp/stop-journal.sh\" ] && \"$HOME/.claude/hooks/aiwcp/stop-journal.sh\" || true"
           }
         ]
       }
@@ -203,7 +216,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/aiwcp/pre-compact.sh"
+            "command": "[ -x \"$HOME/.claude/hooks/aiwcp/pre-compact.sh\" ] && \"$HOME/.claude/hooks/aiwcp/pre-compact.sh\" || true"
           }
         ]
       }

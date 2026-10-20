@@ -72,7 +72,12 @@ def stream_id(explicit=None):
         for line in (Path.cwd() / "STATE.md").read_text().splitlines():
             m = re.search(r"\*\*Stream:\*\*\s*([A-Za-z0-9/_-]+)", line)
             if m:
-                return m.group(1).strip().rstrip(".")
+                sid = m.group(1).strip().rstrip(".")
+                if not STREAM_RE.match(sid):
+                    raise SystemExit(f"loop: STATE.md stream id {sid!r} must match [A-Za-z0-9_-]{{1,64}}")
+                return sid
+    except SystemExit:
+        raise
     except Exception:
         pass
     return None
@@ -212,6 +217,8 @@ def cmd_tick(a):
     lease["heartbeat_at"] = now()
     lease["iteration"] += 1
     it = lease["iteration"]
+    # The lease is a plain file any local process may edit; show what is about to run, every tick.
+    print(f"loop[{sid}] iter {it}: exit_cmd = {lease.get('exit_cmd')!r}")
 
     rc, out, oracle_ok = _run_exit(lease)
     tail = "\n    ".join(out.strip().splitlines()[-4:]) if out.strip() else ""

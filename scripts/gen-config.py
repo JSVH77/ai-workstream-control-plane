@@ -21,10 +21,15 @@ Usage:
 
 Only writes worktrees that are actually registered (matched by expected path <dev-root>/<name>).
 """
-import json, subprocess, argparse, copy
+import json, subprocess, argparse, copy, re
 from pathlib import Path
 
-MERGE_DENY = ["Bash(gh pr merge:*)", "mcp__github__merge_pull_request"]
+# `gh pr merge` is not the only way to land on main: `git push origin HEAD:main` and the REST merge endpoint do
+# the same. Deny them too for a can_merge:false stream. The authoritative enforcement is still SERVER-SIDE —
+# GitHub branch protection (required review, restrict who may push to main); these rules are the guardrail.
+MERGE_DENY = ["Bash(gh pr merge:*)", "mcp__github__merge_pull_request",
+              "Bash(git push *:main*)", "Bash(git push *:master*)", "Bash(gh api *merge*)"]
+NS_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 def sh(args, cwd=None):
     try:
@@ -73,6 +78,9 @@ def load_project():
     ns = p.get("hook_namespace")
     if not ns:
         raise SystemExit("gen-config: config/project.yaml missing hook_namespace")
+    if not NS_RE.match(str(ns)):
+        raise SystemExit(f"gen-config: hook_namespace must match [A-Za-z0-9_-]{{1,32}} (got {ns!r}) — it names a "
+                         f"directory under ~/.claude/hooks and is substituted into the hook commands")
     paths = p.get("protected_paths") or []
     extra = p.get("extra_denies") or []
     if not isinstance(paths, list) or not isinstance(extra, list):
@@ -113,7 +121,12 @@ def main():
             print(f"[skip]  {sid:5} {wt:24} — not registered at {expected}")
             continue
         target = Path(expected) / ".claude" / "settings.json"
-        newtext = json.dumps(gen_settings(base, bool(meta.get("can_merge")), project_denies), indent=2) + "\n"
+        can_merge = meta.get("can_merge", False)
+        if can_merge is not True and can_merge is not False:
+            # `can_merge: "false"`, `fasle`, `no` are non-empty strings — truthy — and would silently generate a
+            # MERGE-ALLOW stream. Only a YAML boolean is accepted.
+            raise SystemExit(f"gen-config: {sid}.can_merge must be a YAML boolean true/false (got {can_merge!r})")
+        newtext = json.dumps(gen_settings(base, can_merge, project_denies), indent=2) + "\n"
         cur = target.read_text() if target.exists() else None
         policy = "MERGE-ALLOW" if meta.get("can_merge") else "merge-deny"
         if cur == newtext:

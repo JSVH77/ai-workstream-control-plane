@@ -147,7 +147,8 @@ def build():
     g["unregistered_worktrees"] = [w["path"] for w in wts if w["path"] not in matched_paths]
     prs = sh(["gh", "pr", "list", "--json", "number,title,headRefName",
               "--jq", r'.[]|"#\(.number) [\(.headRefName)] \(.title)"'])
-    g["open_prs"] = None if prs is None else [l for l in prs.splitlines() if l]   # None = gh unavailable
+    # PR titles/branch names are written by whoever opened the PR; strip control characters, cap each line.
+    g["open_prs"] = None if prs is None else [re.sub(r"[\x00-\x1f\x7f]", " ", l)[:200] for l in prs.splitlines() if l]
     stash = sh(["git", "stash", "list"], cwd=str(REPO_ROOT))
     g["stashes"] = None if stash is None else [l for l in stash.splitlines() if l]
     # Runtime lives in the CANONICAL main-root .workflow-runtime (shared across worktrees), resolved

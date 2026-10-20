@@ -60,7 +60,8 @@ def envelopes():
             e = json.loads(f.read_text())
         except Exception:
             continue
-        if isinstance(e, dict) and isinstance(e.get("id"), str) and ID_RE.match(e["id"]):
+        # the id inside the file must be the file's own name: the ack marker path is built from it
+        if isinstance(e, dict) and isinstance(e.get("id"), str) and ID_RE.match(e["id"]) and e["id"] == f.stem:
             out.append(e)
     return out
 
@@ -101,8 +102,20 @@ def check_id(value):
         raise SystemExit(f"dispatch: --id is not an envelope id (got {value!r})")
     return value
 
+def registry_ids():
+    """Stream ids from config/streams.yaml, or None when no registry is readable (then --to is not checked)."""
+    try:
+        reg = cp.load_yaml(cp.config_file(cp.framework_in(cp.main_root(REPO_ROOT)), "streams.yaml")).get("streams")
+        return set(reg.keys()) if isinstance(reg, dict) and reg else None
+    except SystemExit:
+        return None
+
 def cmd_send(a):
     check_stream(a.frm, "--from"); check_stream(a.to, "--to")
+    ids = registry_ids()
+    if ids is not None and a.to not in ids and a.to not in ("all", "ALL"):
+        raise SystemExit(f"dispatch: --to {a.to!r} is not a registered stream ({', '.join(sorted(ids))}) or 'all' — "
+                         f"an envelope to an unknown stream reaches nobody and shows [pending] forever")
     ensure()
     eid = now().replace(":", "").replace("-", "") + "-" + uuid.uuid4().hex[:6]
     env = {"id": eid, "from": a.frm, "to": a.to, "type": a.type, "topic": a.topic,

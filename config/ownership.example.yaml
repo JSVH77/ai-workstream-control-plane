@@ -35,3 +35,5 @@ escalation:
 
 # Merge authority mirrors `can_merge` in streams.yaml: SA only, post-review. Every non-SA worktree denies
 # `gh pr merge` AND the GitHub-MCP merge tool — gen-config enforces both surfaces.
+# Those are Bash/MCP deny rules — a guardrail. The authoritative merge gate is GitHub branch protection on
+# `main` (required review, restricted pushers); set it on the repo, the control plane cannot.

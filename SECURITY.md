@@ -20,6 +20,10 @@ but "what does it feed into a model's context, and what does it write to disk".
    *text* the model writes; `/bin/rm`, `bash -c '…'` or `git -C . push` bypass any Bash rule, and Anthropic's
    docs say so. The floor stops the model's ordinary mistakes (force-pushing main, deleting the framework); it
    does not stop a hostile prompt. For an OS-level boundary use Claude Code's sandboxing.
+   Two consequences, stated plainly: the floor's allow list ends with `Bash(*)`, so anything not denied runs
+   without a prompt (a project may remove that line and accept the prompts); and the SA-only merge policy that
+   `gen-config` writes is only as strong as the deny list — the authoritative enforcement is GitHub branch
+   protection on `main` (required review, restricted pushers), which the control plane cannot configure for you.
 3. **Strings that become file names.** Stream ids and envelope ids become ack markers and lease files under
    `.workflow-runtime/` (gitignored). They are validated against `[A-Za-z0-9_-]{1,64}` and the envelope-id shape
    before any write or unlink, so a crafted `--stream ../../x` cannot reach outside the runtime directory.

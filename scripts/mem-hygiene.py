@@ -44,7 +44,7 @@ def load_registry():
 
 
 def bucket_dir(worktree_abspath):
-    return PROJECTS / str(worktree_abspath).replace("/", "-") / "memory"
+    return PROJECTS / re.sub(r"[^A-Za-z0-9]", "-", str(worktree_abspath)) / "memory"
 
 
 def stream_paths():

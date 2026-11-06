@@ -164,6 +164,8 @@ fix round of one PR can exhaust a usage window in an afternoon.
 - Append `{pr, head, verdict, tokens, secs, model, effort}` to a JSONL log; the merge announcement counts
   rounds and models from it.
 - Post with a fixed signature line so watchers and the "already reviewed" guard can find bot comments.
+  Both the guard and the merge gate count a comment only if its author is the account the script posts
+  as **and** it carries the signature; a look-alike comment from anyone else counts for nothing.
 
 **Writing the focus.** Two to four risks, one line each, naming the property and the case that would
 break it ("an empty list must not fall back to the default card"), taken from the stream's

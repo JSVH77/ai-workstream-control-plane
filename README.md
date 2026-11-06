@@ -8,7 +8,8 @@ This is the **project-agnostic** framework. A host project adds only its overlay
 
 > **New here?** → [`QUICKSTART.md`](QUICKSTART.md) (day-0 stand-up, ~10 min) ·
 > [`use-cases/UC-00-bootstrap-fresh-repo.md`](use-cases/UC-00-bootstrap-fresh-repo.md) (the playbook) ·
-> [`control-plane-spec.md`](control-plane-spec.md) (the model — **§10 is the live-vs-design source of truth**).
+> [`control-plane-spec.md`](control-plane-spec.md) (the model — **§10 is the live-vs-design source of truth**) ·
+> [`branching-and-review.md`](branching-and-review.md) (how code lands: branches, PR lifecycle, reviewer-bot reviews, merge gate).
 
 ## Who this is for
 
@@ -171,6 +172,7 @@ use-cases/          UC-00 bootstrap · UC-01 onboard · UC-02 recover SA · UC-0
                     UC-05 consume/upgrade via git subtree
 memory/             portable discipline memories to seed a fresh adopter's (empty) vendor bucket
 control-plane-spec.md   the model + §10 live-vs-design status (the contract)
+branching-and-review.md   branches, PR lifecycle, reviewer-bot reviews, merge gate (conventions)
 QUICKSTART.md · DISASTER-RECOVERY.md · SA-BOOTSTRAP.md · loop-template.md · runtime.md
 review-ledger.template.md   the review learning loop (init.sh → review-ledger.md)
 init.sh             day-0 overlay bootstrap (idempotent, non-destructive)

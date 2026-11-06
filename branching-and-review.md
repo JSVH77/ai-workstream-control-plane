@@ -151,8 +151,10 @@ fix round of one PR can exhaust a usage window in an afternoon.
 - Refuse unless CI on that head is green. Count only the latest run of each check; a docs-only PR with no
   checks by design counts as green.
 - Refuse a head that already has a bot comment naming it, so a head is never reviewed twice. Take an
-  exclusive per-PR-and-head claim first (for example `mkdir <locks>/<pr>-<sha>`, which fails if it
-  exists) and check for the comment only while holding it, so two concurrent runs cannot both post.
+  exclusive per-PR-and-head claim first, in one directory shared by every run on the machine (for
+  example `mkdir <shared-locks>/<pr>-<sha>`, which fails if it exists), check for the comment while
+  holding it, and keep it until the review is posted or the run fails. A claim older than the longest
+  plausible run (say 30 minutes) counts as abandoned: the next run logs it, removes it and claims again.
 - Review in a detached throwaway worktree on the PR head, diff against `origin/main`, sandbox read-only.
 - Prompt in two parts: (A) the focus checks SA passed, each answered explicitly, and (B) a full general
   pass over the diff. The focus list adds checks; it never narrows the review.

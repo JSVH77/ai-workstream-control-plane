@@ -9,13 +9,16 @@ set -euo pipefail
 cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
 
 input="$(cat || true)"
-read -r tp trigger < <(printf '%s' "$input" | python3 -c '
-import sys, json
+# Tab-separated, so a transcript path containing spaces (e.g. a macOS home folder) survives the split.
+# The trigger is reduced to a safe alphabet because it becomes part of a file name.
+IFS=$'\t' read -r tp trigger < <(printf '%s' "$input" | python3 -c '
+import sys, json, re
 try:
     d = json.load(sys.stdin)
 except Exception:
     print(""); sys.exit(0)
-print(d.get("transcript_path", ""), d.get("trigger", "unknown"))
+trig = re.sub(r"[^A-Za-z0-9_-]", "", str(d.get("trigger", "unknown")))[:32] or "unknown"
+print(str(d.get("transcript_path", "")) + "\t" + trig)
 ' 2>/dev/null || echo "")
 
 [ -z "${tp:-}" ] && exit 0

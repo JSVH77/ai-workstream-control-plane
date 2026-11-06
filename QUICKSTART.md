@@ -14,7 +14,7 @@ Either layout works — nothing in the core assumes one (spec §1.3):
 git subtree add --prefix=workflow <this-repo-url> main --squash
 ```
 
-Add these to your repo's `.gitignore`: `.workflow-runtime/`, `__pycache__/`, `STATE.md`, `STATE.journal.md`.
+Add these to your repo's `.gitignore`: `.workflow-runtime/`, `__pycache__/`, `STATE.md`, `STATE.journal.md`, `.claude/transcript-backups/` (the pre-compaction transcript copies — they can contain anything the session saw).
 (`wf` refuses to run with a dirty framework dir, so an un-ignored artifact is an operational problem.)
 
 ## 1. Name your project

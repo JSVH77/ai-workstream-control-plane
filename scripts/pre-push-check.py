@@ -29,12 +29,17 @@ def sh(args, cwd=None):
         return "", False
 
 
-ROOT = cp.main_root(SCRIPT.parent)
-FRAMEWORK = cp.framework_in(ROOT)
+MAIN = cp.main_root(SCRIPT.parent)          # where the shared config lives
+FRAMEWORK = cp.framework_in(MAIN)
+# The DIFF root is the worktree the guard is run from — a stream's own checkout — not the main worktree.
+# Diffing the main worktree from a stream's checkout reported main's files and a false-clean for the branch.
+_top, _ok = (lambda r: (r.stdout.strip(), r.returncode == 0))(
+    subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=str(Path.cwd()), capture_output=True, text=True))
+ROOT = Path(_top) if _ok and _top else MAIN
 # Repo-relative paths of the files that legitimately NAME the patterns they'd otherwise trip on. Built
 # from the resolved framework dir so they stay correct in both layouts (flat repo vs vendored prefix).
 try:
-    _fw = FRAMEWORK.relative_to(ROOT).as_posix() if FRAMEWORK != ROOT else ""
+    _fw = FRAMEWORK.relative_to(MAIN).as_posix() if FRAMEWORK != MAIN else ""
 except ValueError:                      # framework outside the repo root (exotic install) — no prefix
     _fw = ""
 _p = (lambda rel: f"{_fw}/{rel}" if _fw else rel)
@@ -52,14 +57,14 @@ def changed_files(base_ref):
     if mb_ok and base:
         diff_out, d_ok = sh(["git", "diff", "--name-only", base, "HEAD"], cwd=str(ROOT))
         if d_ok:
-            committed = diff_out.split()
+            committed = diff_out.splitlines()
         else:
             base_ok, note = False, f"`git diff {base[:12]}..HEAD` failed"
     else:
         base_ok, note = False, f"cannot resolve base ref '{base_ref}' — fetched? (`git fetch origin`)"
     working, _ = sh(["git", "diff", "--name-only", "HEAD"], cwd=str(ROOT))
     staged, _ = sh(["git", "diff", "--name-only", "--cached"], cwd=str(ROOT))
-    files = sorted(set(committed) | set(working.split()) | set(staged.split()))
+    files = sorted(set(committed) | set(working.splitlines()) | set(staged.splitlines()))
     return files, base_ok, note
 
 

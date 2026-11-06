@@ -26,7 +26,7 @@ backlog the SessionStart hook already showed) and emits only envelopes that ARRI
 
 Read-only commands (inbox/watch/log/show) never mutate. `send`/`ack` only ever CREATE files.
 """
-import subprocess, json, sys, os, argparse, datetime, uuid
+import subprocess, json, sys, os, argparse, datetime, uuid, re
 from pathlib import Path
 
 def sh(args, cwd=None):
@@ -57,9 +57,12 @@ def envelopes():
     out = []
     for f in sorted(DISPATCH.glob("*.json")):
         try:
-            out.append(json.loads(f.read_text()))
+            e = json.loads(f.read_text())
         except Exception:
-            pass
+            continue
+        # the id inside the file must be the file's own name: the ack marker path is built from it
+        if isinstance(e, dict) and isinstance(e.get("id"), str) and ID_RE.match(e["id"]) and e["id"] == f.stem:
+            out.append(e)
     return out
 
 def is_acked(eid, stream):
@@ -79,7 +82,40 @@ def acks_for(eid):
 
 PRI_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
+# Stream ids and envelope ids become FILE NAMES under the runtime dir (ack markers, leases) and routing keys.
+# Anything outside this alphabet is refused: no path separators, no `..`, no whitespace, no control chars.
+STREAM_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+ID_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}$")
+
+def check_stream(value, flag):
+    if value in ("all", "ALL") and flag == "--to":
+        return value
+    if "," in value:
+        raise SystemExit(f"dispatch: {flag} takes ONE stream id (got {value!r}); a comma-separated list reaches "
+                         f"nobody — send one envelope per recipient, or --to all")
+    if not STREAM_RE.match(value):
+        raise SystemExit(f"dispatch: {flag} must match [A-Za-z0-9_-]{{1,64}} (got {value!r})")
+    return value
+
+def check_id(value):
+    if not ID_RE.match(value):
+        raise SystemExit(f"dispatch: --id is not an envelope id (got {value!r})")
+    return value
+
+def registry_ids():
+    """Stream ids from config/streams.yaml, or None when no registry is readable (then --to is not checked)."""
+    try:
+        reg = cp.load_yaml(cp.config_file(cp.framework_in(cp.main_root(REPO_ROOT)), "streams.yaml")).get("streams")
+        return set(reg.keys()) if isinstance(reg, dict) and reg else None
+    except SystemExit:
+        return None
+
 def cmd_send(a):
+    check_stream(a.frm, "--from"); check_stream(a.to, "--to")
+    ids = registry_ids()
+    if ids is not None and a.to not in ids and a.to not in ("all", "ALL"):
+        raise SystemExit(f"dispatch: --to {a.to!r} is not a registered stream ({', '.join(sorted(ids))}) or 'all' — "
+                         f"an envelope to an unknown stream reaches nobody and shows [pending] forever")
     ensure()
     eid = now().replace(":", "").replace("-", "") + "-" + uuid.uuid4().hex[:6]
     env = {"id": eid, "from": a.frm, "to": a.to, "type": a.type, "topic": a.topic,
@@ -90,7 +126,7 @@ def cmd_send(a):
     print(f"sent envelope {eid}  {a.frm} -> {a.to}  [{a.priority}] {a.type}: {a.topic}")
 
 def cmd_inbox(a):
-    stream = a.stream
+    stream = check_stream(a.stream, "--stream")
     rows = _inbox_rows(stream)
     if not rows:
         print(f"inbox[{stream}]: empty (no unacked envelopes)")
@@ -118,7 +154,7 @@ def cmd_watch(a):
     running session reacts without a restart. Stdout is flushed per line; poll errors are printed and the
     loop continues (never dies silently on a transient FS/read hiccup — gate-soundness)."""
     import time
-    stream, interval = a.stream, max(2, a.interval)
+    stream, interval = check_stream(a.stream, "--stream"), max(2, a.interval)
     if a.once:                                   # one-shot dump of the current inbox (testing / scripting)
         rows = _inbox_rows(stream)
         print(f"watch[{stream}] --once: {len(rows)} unacked", flush=True)
@@ -142,6 +178,7 @@ def cmd_watch(a):
         time.sleep(interval)
 
 def cmd_ack(a):
+    check_id(a.id); check_stream(a.stream, "--stream")
     ensure()
     match = [e for e in envelopes() if e["id"] == a.id]
     if not match:
@@ -173,6 +210,7 @@ def cmd_log(a):
               f"{e.get('type')}: {e.get('topic')}{refs}  [{status}]")
 
 def cmd_show(a):
+    check_id(a.id)
     for e in envelopes():
         if e["id"] == a.id:
             print(json.dumps({"envelope": e, "acks": acks_for(a.id)}, indent=2))

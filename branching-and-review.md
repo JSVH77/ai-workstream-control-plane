@@ -88,16 +88,18 @@ line.
 
 ```mermaid
 flowchart LR
-  T["SA ticket<br/>property + test case"] --> B["Stream builds<br/>fresh branch, push"]
-  B --> CI{"CI green?"}
+  T["1 SA ticket<br/>property + test case"] --> B["2 Stream builds<br/>fresh branch, push"]
+  B --> O["3 Open the PR"]
+  O --> CI{"4 CI green?"}
   CI -- "red: fix and push" --> B
-  CI -- "yes" --> RR["review_request<br/>head sha + 2-4 risks"]
-  RR --> CX["Bot review on that head<br/>tier per round"]
+  CI -- "yes" --> RR["5 review_request<br/>head sha + 2-4 risks"]
+  RR --> CX["6 Bot review on that head<br/>tier per round"]
   CX --> F{"Findings?"}
   F -- "fix ticket" --> B
-  F -- "clean or all dispositioned" --> RC["Resolution comment<br/>fixed, removed, ruled"]
-  RC --> M["Merge<br/>announce, notify, checkpoint"]
-  M --> P["Acceptance on staging<br/>blocks promotion, not merge"]
+  F -- "clean or all dispositioned" --> RC["7 Resolution comment<br/>fixed, removed, ruled"]
+  RC --> M["8 Merge"]
+  M --> AN["9 Announce<br/>channel, envelope, STATE"]
+  AN --> P["10 Acceptance on staging<br/>blocks promotion, not merge"]
 ```
 
 A fix round never skips a step: the stream pushes, CI runs again, and the bot reviews the new head,
@@ -148,7 +150,9 @@ fix round of one PR can exhaust a usage window in an afternoon.
 
 - Refuse unless CI on that head is green. Count only the latest run of each check; a docs-only PR with no
   checks by design counts as green.
-- Refuse a head that already has a bot comment naming it, so a head is never reviewed twice.
+- Refuse a head that already has a bot comment naming it, so a head is never reviewed twice. Take an
+  exclusive per-PR-and-head claim first (for example `mkdir <locks>/<pr>-<sha>`, which fails if it
+  exists) and check for the comment only while holding it, so two concurrent runs cannot both post.
 - Review in a detached throwaway worktree on the PR head, diff against `origin/main`, sandbox read-only.
 - Prompt in two parts: (A) the focus checks SA passed, each answered explicitly, and (B) a full general
   pass over the diff. The focus list adds checks; it never narrows the review.
